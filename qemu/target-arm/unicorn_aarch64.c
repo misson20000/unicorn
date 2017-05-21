@@ -178,6 +178,19 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
     return 0;
 }
 
+static uc_err arm64_query(struct uc_struct *uc, uc_query_type type, size_t *result)
+{
+    CPUState *mycpu = uc->cpu;
+
+    switch(type) {
+        case UC_QUERY_EXCEPTION_SYNDROME:
+            *result = ARM_CPU(uc, mycpu)->env.exception.syndrome;
+            return UC_ERR_OK;
+        default:
+            return UC_ERR_ARG;
+    }
+}
+
 DEFAULT_VISIBILITY
 #ifdef TARGET_WORDS_BIGENDIAN
 void arm64eb_uc_init(struct uc_struct* uc)
@@ -194,5 +207,6 @@ void arm64_uc_init(struct uc_struct* uc)
     uc->reg_reset = arm64_reg_reset;
     uc->set_pc = arm64_set_pc;
     uc->release = arm64_release;
+    uc->query = arm64_query;
     uc_common_init(uc);
 }
