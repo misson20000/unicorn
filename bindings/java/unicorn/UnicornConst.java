@@ -99,6 +99,7 @@ public interface UnicornConst {
    public static final int UC_QUERY_MODE = 1;
    public static final int UC_QUERY_PAGE_SIZE = 2;
    public static final int UC_QUERY_ARCH = 3;
+   public static final int UC_QUERY_EXCEPTION_SYNDROME = 4;
 
    public static final int UC_PROT_NONE = 0;
    public static final int UC_PROT_READ = 1;
