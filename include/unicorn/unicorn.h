@@ -309,6 +309,7 @@ typedef enum uc_query_type {
     UC_QUERY_MODE = 1,
     UC_QUERY_PAGE_SIZE,
     UC_QUERY_ARCH,
+    UC_QUERY_EXCEPTION_SYNDROME,
 } uc_query_type;
 
 // Opaque storage for CPU context, used with uc_context_*()
