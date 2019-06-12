@@ -156,6 +156,7 @@ void x86_reg_reset(struct uc_struct *uc)
         case UC_MODE_64:
             env->hflags |= HF_CS32_MASK | HF_SS32_MASK | HF_CS64_MASK | HF_LMA_MASK | HF_OSFXSR_MASK;
             env->hflags &= ~(HF_ADDSEG_MASK);
+            env->efer |= MSR_EFER_LMA | MSR_EFER_LME; // extended mode activated
             cpu_x86_update_cr0(env, CR0_PE_MASK); // protected mode
             break;
     }
@@ -292,6 +293,14 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
             case UC_X86_REG_YMM5:
             case UC_X86_REG_YMM6:
             case UC_X86_REG_YMM7:
+            case UC_X86_REG_YMM8:
+            case UC_X86_REG_YMM9:
+            case UC_X86_REG_YMM10:
+            case UC_X86_REG_YMM11:
+            case UC_X86_REG_YMM12:
+            case UC_X86_REG_YMM13:
+            case UC_X86_REG_YMM14:
+            case UC_X86_REG_YMM15:
                 {
                     float64 *dst = (float64*)value;
                     XMMReg *lo_reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_YMM0];
@@ -469,6 +478,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                         break;
                     case UC_X86_REG_MSR:
                         x86_msr_read(uc, (uc_x86_msr *)value);
+                        break;
+                    case UC_X86_REG_MXCSR:
+                        *(uint32_t *)value = X86_CPU(uc, mycpu)->env.mxcsr;
                         break;
                 }
                 break;
@@ -752,6 +764,24 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                     case UC_X86_REG_MSR:
                         x86_msr_read(uc, (uc_x86_msr *)value);
                         break;
+                    case UC_X86_REG_MXCSR:
+                        *(uint32_t *)value = X86_CPU(uc, mycpu)->env.mxcsr;
+                        break;
+                    case UC_X86_REG_XMM8:
+                    case UC_X86_REG_XMM9:
+                    case UC_X86_REG_XMM10:
+                    case UC_X86_REG_XMM11:
+                    case UC_X86_REG_XMM12:
+                    case UC_X86_REG_XMM13:
+                    case UC_X86_REG_XMM14:
+                    case UC_X86_REG_XMM15:
+                        {
+                            float64 *dst = (float64*)value;
+                            XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
+                            dst[0] = reg->_d[0];
+                            dst[1] = reg->_d[1];
+                            break;
+                        }
                 }
                 break;
 #endif
@@ -794,7 +824,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                 }
                 continue;
             case UC_X86_REG_FPCW:
-                X86_CPU(uc, mycpu)->env.fpuc = *(uint16_t *)value;
+                cpu_set_fpuc(&X86_CPU(uc, mycpu)->env, *(uint16_t *)value);
                 continue;
             case UC_X86_REG_FPTAG:
                 {
@@ -831,6 +861,14 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
             case UC_X86_REG_YMM5:
             case UC_X86_REG_YMM6:
             case UC_X86_REG_YMM7:
+            case UC_X86_REG_YMM8:
+            case UC_X86_REG_YMM9:
+            case UC_X86_REG_YMM10:
+            case UC_X86_REG_YMM11:
+            case UC_X86_REG_YMM12:
+            case UC_X86_REG_YMM13:
+            case UC_X86_REG_YMM14:
+            case UC_X86_REG_YMM15:
                 {
                     float64 *src = (float64*)value;
                     XMMReg *lo_reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_YMM0];
@@ -1016,6 +1054,9 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         break;
                     case UC_X86_REG_MSR:
                         x86_msr_write(uc, (uc_x86_msr *)value);
+                        break;
+                    case UC_X86_REG_MXCSR:
+                        cpu_set_mxcsr(&X86_CPU(uc, mycpu)->env, *(uint32_t *)value);
                         break;
                 }
                 break;
@@ -1309,6 +1350,24 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     case UC_X86_REG_MSR:
                         x86_msr_write(uc, (uc_x86_msr *)value);
                         break;
+                    case UC_X86_REG_MXCSR:
+                        cpu_set_mxcsr(&X86_CPU(uc, mycpu)->env, *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_XMM8:
+                    case UC_X86_REG_XMM9:
+                    case UC_X86_REG_XMM10:
+                    case UC_X86_REG_XMM11:
+                    case UC_X86_REG_XMM12:
+                    case UC_X86_REG_XMM13:
+                    case UC_X86_REG_XMM14:
+                    case UC_X86_REG_XMM15:
+                        {
+                            float64 *src = (float64*)value;
+                            XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
+                            reg->_d[0] = src[0];
+                            reg->_d[1] = src[1];
+                            break;
+                        }
                 }
                 break;
 #endif
